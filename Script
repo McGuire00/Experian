@@ -1,0 +1,93 @@
+import requests
+from bs4 import BeautifulSoup
+import json
+
+
+
+s = requests.Session()
+
+def login():
+    global webpage
+    link = 'https://usa.experian.com/api/securelogin/oauth/token'
+
+    username = input('What is your username? ')
+    password = input('What is your password? ')
+
+
+    payload = {'username': username,
+    'password': password,
+    'clientId': 'experian',
+    'jsc': '',
+    'trustId': ''
+    }
+
+    headers = {'Content-type':'application/json',
+    'Accept':'application/json'}
+
+    webpage = s.post(link, data=json.dumps(payload), headers=headers)
+login()
+
+if webpage.status_code == 401:
+    print('Either your username or password is incorrect. Please try again!')
+    login()
+else:
+    soup = BeautifulSoup(webpage.text, 'html.parser')
+    info = webpage.json()
+    question = info['securityQuestion']['description']
+    print()
+    print('Please answer the following security question.... ')
+    print(question)
+    print()
+    key = info['token']['accessToken']
+    id = info['trustId']
+    ## MAKE SURE YOUR ANSWER AND PIN IS RIGHT OTHERWISE SCRIPT WILL NOT CONTINUE
+    answer = input('What is the answer the your security question? ')
+    pin = input('What is your pin? ')
+    print()
+    print()
+
+    data = {
+    'answer': answer,
+    'pin': int(pin),
+    'trustDevice': 'true',
+    'jsc': '',
+    'trustId': id
+    }
+
+    head={'Content-type':'application/json',
+    'Accept':'application/json',
+    'Authorization':'Bearer ' + key,
+    'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.122 Safari/537.36'
+    }
+
+
+
+    ha = 'https://usa.experian.com/api/securelogin/submitquestion'
+    security = requests.post(ha, data=json.dumps(data), headers=head)
+    imf = security.json()
+    token = imf['token']['accessToken']
+
+
+
+
+    headss={'Content-type':'application/json',
+    'Accept':'application/json',
+    'Authorization':'Bearer ' + key,
+    'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.122 Safari/537.36',
+    'path': '/api/alerts/summary/7656385e-f3c2-44d4-a15f-fcb1089e59bf?status=all&group=credit&group=cpd&group=pfm&group=identity',
+    'adrum': 'isAjax:true',
+    'Authorization':'Bearer ' + token
+    }
+
+    alerts = 'https://usa.experian.com/api/alerts/7656385e-f3c2-44d4-a15f-fcb1089e59bf?status=all&group=credit&group=cpd&group=pfm'
+    score = s.get(alerts, headers=headss)
+
+    alert = score.json()
+
+    FIELDS_TO_PRINT = 'date','subject', 'headline', 'detail'
+    for i in alert:
+        for field in FIELDS_TO_PRINT:
+            print(i[field])
+        print()
+
+
