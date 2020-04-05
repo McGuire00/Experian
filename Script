@@ -84,9 +84,9 @@ else:
 
     alert = score.json()
 
-    FIELDS_TO_PRINT = 'date','subject', 'headline', 'detail'
+    fields = 'date','subject', 'headline', 'detail'
     for i in alert:
-        for field in FIELDS_TO_PRINT:
+        for field in fields:
             print(i[field])
         print()
 
